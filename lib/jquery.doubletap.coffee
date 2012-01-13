@@ -29,7 +29,7 @@ $ = jQuery  # See: http://stackoverflow.com/a/4534417
 
 defaults = swipeTolerance: 40
 
-touches = {}
+allTouches = {}
 latestTap = null
 
 
@@ -39,11 +39,11 @@ class touchStatus
     @target = $(target)
     @startX = @currentX = @touch.screenX
     @startY = @currentY = @touch.screenY
-    @eventType = null
 
   move: (touch) ->
     @currentX = touch.screenX
     @currentY = touch.screenY
+    return
 
   process: ->
     offsetX = @currentX - @startX
@@ -52,22 +52,23 @@ class touchStatus
     absOffsetY = Math.abs offsetY
 
     if offsetX == 0 and offsetY == 0
-      do @checkForDoubleTap
+      if latestTap and (new Date() - latestTap) < 400
+        @eventType = "doubletap"
+      else
+        @eventType = "tap"
+      latestTap = new Date()
     else if absOffsetY > @options.swipeTolerance and absOffsetY > absOffsetX
       @eventType = offsetY > 0 and "swipedown" or "swipeup"
       @target.trigger "swipe", [@]
     else if absOffsetX > @options.swipeTolerance
       @eventType = offsetX > 0 and "swiperight" or "swipeleft"
       @target.trigger "swipe", [@]
+    else
+      @eventType = null
 
     if @eventType then @target.trigger @eventType, [@]
     @target.trigger "touch", [@]
-
-  checkForDoubleTap: ->
-    if latestTap and (new Date() - latestTap) < 400
-      @eventType = "doubletap"
-    if not @eventType then @eventType = "tap"
-    latestTap = new Date()
+    return
 
 
 class swipeEvents
@@ -80,25 +81,31 @@ class swipeEvents
     elements.bind "touchend", (evt) => @touchEnd evt
 
   touchStart: (evt) -> @eachTouch evt, (touch) =>
-    touches[touch.identifier] = new touchStatus evt.target, touch, @options
+    allTouches[touch.identifier] = new touchStatus evt.target, touch, @options
+    return
 
   touchMove: (evt) -> @eachTouch evt, (touch) =>
-    touches[touch.identifier]?.move touch
+    allTouches[touch.identifier]?.move touch
+    return
 
   touchCancel: (evt) -> @eachTouch evt, (touch) =>
     @purge touch, true
+    return
 
   touchEnd: (evt) -> @eachTouch evt, (touch) =>
     @purge touch
+    return
 
   purge: (touch, cancelled) ->
-    if not cancelled then do touches[touch.identifier]?.process
-    delete touches[touch.identifier]
+    if not cancelled then do allTouches[touch.identifier]?.process
+    delete allTouches[touch.identifier]
+    return
 
   eachTouch: (evt, callback) ->
     evt = evt.originalEvent
-    num = evt.changedTouches.length
-    callback evt.changedTouches[i] for i in [0...num]
+    num = evt.changedallTouches.length
+    callback evt.changedallTouches[i] for i in [0...num]
+    return
 
 
 ###
