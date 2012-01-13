@@ -8,7 +8,7 @@ latestTap = null
 
 class touchStatus
 
-  constructor: (target, @touch=touch, @options=options) ->
+  constructor: (target, @touch, @options) ->
     @target = $(target)
     @startX = @currentX = @touch.screenX
     @startY = @currentY = @touch.screenY
